@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Photon.Pun;
 
 public class GameManager : MonoBehaviour
 {
@@ -12,17 +13,29 @@ public class GameManager : MonoBehaviour
     [SerializeField] private GameObject circleSprite;
     [SerializeField] private GameObject gameOverScreen;
     [SerializeField] private GameObject[] UIIcons;
+    [SerializeField] private GameObject[] playerIconInfo;
     [SerializeField] private GameObject[] gameOverIcons;
     [SerializeField] private GameObject[] destroyOnGameOver;
+
+    private PhotonView[] players = new PhotonView[2];
 
     //false = player 1 (Cross), true = player 2 (Circle)
     private bool playerInTurn;
 
-    private void Start()
+    private void Awake()
     {
         if(instance == null)
         {
             instance = this;
+            if (PhotonNetwork.InRoom)
+            {
+                PhotonNetwork.CurrentRoom.CustomProperties["playerInTurn"] = false;
+                if (!PhotonNetwork.IsMasterClient)
+                {
+                    playerIconInfo[0].SetActive(false);
+                    playerIconInfo[1].SetActive(true);
+                }
+            }
         }
         else
         {
@@ -42,6 +55,10 @@ public class GameManager : MonoBehaviour
 
     public bool GetPlayerInTurn()
     {
+        if (PhotonNetwork.InRoom)
+        {
+            return (bool) PhotonNetwork.CurrentRoom.CustomProperties["playerInTurn"];
+        }
         return playerInTurn;
     }
 
@@ -55,27 +72,56 @@ public class GameManager : MonoBehaviour
         return circleSprite;
     }
 
+    public PhotonView[] GetPlayers()
+    {
+        return players;
+    }
+
     public void SwitchPlayerInTurn()
     {
-        playerInTurn = !playerInTurn;
-        UIIcons[playerInTurn ? 1 : 0].SetActive(true);
-        UIIcons[playerInTurn ? 0 : 1].SetActive(false);
+        if (PhotonNetwork.InRoom)
+        {
+            PhotonNetwork.CurrentRoom.CustomProperties["playerInTurn"] = !(bool)PhotonNetwork.CurrentRoom.CustomProperties["playerInTurn"];
+            UIIcons[(bool) PhotonNetwork.CurrentRoom.CustomProperties["playerInTurn"] ? 1 : 0].SetActive(true);
+            UIIcons[(bool) PhotonNetwork.CurrentRoom.CustomProperties["playerInTurn"] ? 0 : 1].SetActive(false);
+        }
+        else
+        {
+            playerInTurn = !playerInTurn;
+            UIIcons[playerInTurn ? 1 : 0].SetActive(true);
+            UIIcons[playerInTurn ? 0 : 1].SetActive(false);
+        }
     }
 
     public IEnumerator GameOver()
     {
         yield return new WaitForSeconds(1);
 
-        foreach (GameObject obj in destroyOnGameOver)
+        foreach(GameObject obj in GameObject.FindGameObjectsWithTag("DestroyOnGameOver"))
         {
             Destroy(obj);
         }
+        foreach (GameObject obj in destroyOnGameOver)
+        {
+            obj.SetActive(false);
+        }
         gameOverScreen.SetActive(true);
 
-        if (!playerInTurn)
+        if (PhotonNetwork.InRoom)
         {
-            gameOverIcons[0].SetActive(false);
-            gameOverIcons[1].SetActive(true);
+            if (!(bool)PhotonNetwork.CurrentRoom.CustomProperties["playerInTurn"])
+            {
+                gameOverIcons[0].SetActive(false);
+                gameOverIcons[1].SetActive(true);
+            }
+        }
+        else
+        {
+            if (!playerInTurn)
+            {
+                gameOverIcons[0].SetActive(false);
+                gameOverIcons[1].SetActive(true);
+            }
         }
     }
 
@@ -105,5 +151,6 @@ public class GameManager : MonoBehaviour
             }
         }
     }
+
 
 }

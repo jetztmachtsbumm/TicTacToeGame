@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Bullet
   - GridCell
+  - DestroyOnGameOver
   layers:
   - Default
   - TransparentFX

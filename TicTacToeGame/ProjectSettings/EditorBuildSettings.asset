@@ -11,4 +11,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/LocalPlay.unity
     guid: 2e9fd0162ed199a4abbdd8ce6b6985cd
+  - enabled: 1
+    path: Assets/Scenes/OnlineGame.unity
+    guid: 00c606a7c255868419ffcce8737113d3
   m_configObjects: {}
